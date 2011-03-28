@@ -1,0 +1,11 @@
+Ash -- A.K.A "Another Shell"  is yet another Unix shell in spirit to Zsh or Bash.
+
+Realized while a school project, It's not intending to reinvent the wheel, I rather consider it as a Sandbox. 
+A lightweight Shell, implementing classical and minimal functionalities such as auto-completion, 
+history, config file management and so on. 
+
+It is based on C language and implements termcaps tty management and a LL Parser in order
+to manage command parsing. Some "Great features" are missing for the moment, such as
+gobbling or scripting implementation; but it was conceived in a "Keep it simple" way. 
+
+This project is under Apache Licence, Feel free to fork, comment and report.
