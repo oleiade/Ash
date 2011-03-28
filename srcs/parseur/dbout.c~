@@ -1,0 +1,50 @@
+/*
+** dbout.c for 42sh in /home/hugo/Dev/42sh/srcs
+** 
+** Made by Hugo CUVILLIER
+** Login   <hugo@epitech.net>
+** 
+** Started on  Thu Apr 29 21:20:08 2010 Hugo CUVILLIER
+** Last update Sun May 23 12:08:19 2010 francois-xavier gsell
+*/
+
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<dirent.h>
+#include	<string.h>
+#include	<unistd.h>
+
+#include	"42sh.h"
+#include	"get_next_line.h"
+
+/*
+** Write in a pipe in order to redirect it.
+*/
+
+void		writeinpipe(char *keyword, int fd)
+{
+  char		*tmp;
+
+  tmp = keyword;
+  while (tmp)
+    {
+      xwrite(1, PROMPT2, strlen(PROMPT2));
+      tmp = get_next_line(0);
+      if (tmp)
+	{
+	  if (strcmp(tmp, keyword))
+	    {
+	      xwrite(fd, tmp, strlen(tmp));
+	      free(tmp);
+	      xwrite(fd, "\n", 1);
+	    }
+	  else
+	    {
+	      xclose(fd);
+	      tmp = 0;
+	    }
+	}
+      else
+	tmp = keyword;
+    }
+}

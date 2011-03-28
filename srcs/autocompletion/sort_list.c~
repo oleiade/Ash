@@ -1,0 +1,45 @@
+/*
+** sort_list.c for 42sh in /u/all/greine_f/cu/rendu/c/42sh
+**
+** Made by florian greiner
+** Login   <greine_f@epitech.net>
+**
+** Started on  Fri Feb 19 11:08:29 2010 francois-xavier gsell
+** Last update Wed May 19 16:24:38 2010 demay-_l
+*/
+
+#include	<stdlib.h>
+#include	<string.h>
+#include	<unistd.h>
+#include	<dirent.h>
+#include	<sys/types.h>
+
+#include	"my.h"
+#include	"lexer.h"
+#include	"termc.h"
+#include	"auto.h"
+
+void		sort_list(t_list *list, t_list *path)
+{
+  t_link	*buff1;
+  char		*str;
+  int		i;
+
+  i = list->size;
+  while (i)
+    {
+      buff1 = list->head;
+      while (buff1)
+	{
+	  if (buff1->next && strcmp(buff1->data, buff1->next->data) > 0)
+	    {
+	      str = buff1->data;
+	      buff1->data = buff1->next->data;
+	      buff1->next->data = str;
+	    }
+	  buff1 = buff1->next;
+	}
+      i--;
+    }
+  freemylist(path);
+}

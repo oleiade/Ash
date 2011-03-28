@@ -1,0 +1,36 @@
+/*
+** list3.c for 42sh in /u/all/greine_f/cu/rendu/c/42sh
+**
+** Made by florian greiner
+** Login   <greine_f@epitech.net>
+**
+** Started on  Fri Feb 19 11:08:29 2010 francois-xavier gsell
+** Last update Mon Apr  5 16:54:59 2010 Hugo CUVILLIER
+*/
+
+#include	<stdlib.h>
+#include	<dirent.h>
+
+#include	"my.h"
+#include	"lexer.h"
+#include	"termc.h"
+
+/*
+** - Free char list
+*/
+void		free_char_list(t_termc *list)
+{
+  t_com		*buff;
+  t_com		*com;
+
+  if (list)
+  {
+    buff = list->begin;
+    while (buff)
+    {
+      com = buff;
+      buff = buff->next;
+      free(com);
+    }
+  }
+}

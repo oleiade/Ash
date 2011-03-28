@@ -1,0 +1,131 @@
+#include	<stdlib.h>
+#include	<unistd.h>
+#include	<dirent.h>
+#include	<sys/types.h>
+#include	<string.h>
+
+#include	"42sh.h"
+#include	"my.h"
+#include	"lexer.h"
+#include	"termc.h"
+#include	"auto.h"
+
+t_termc		*manage_path(t_termc *command, t_tutils *utils, t_list *path)
+{
+  if (path->size > 1)
+  {
+    extract_utils(path);
+    check_semi_complet(command, path);
+    echo_completion(command, utils, path);
+  }
+  else if (path->size == 1)
+  {
+    check_if_space(path->head);
+    command = my_listcat(command, path);
+  }
+  return (command);
+}
+
+t_termc		*extract_path(t_termc *command)
+{
+  t_com		*buff;
+  t_termc	*new_com;
+
+  new_com = init_char_list();
+  buff = command->end;
+  if (command->begin->c == '.')
+    buff = command->begin;
+  else
+  {
+    while (buff && buff->c != ' ')
+      buff = buff->prev;
+    buff = buff->next;
+  }
+  while (buff)
+  {
+    char_to_list(new_com, buff->c);
+    buff = buff->next;
+  }
+  return (new_com);
+}
+
+t_termc		*epure_path(t_termc *new_com)
+{
+  t_termc	*to_check;
+  t_com		*buff;
+  t_com		*buff2;
+
+  to_check = init_char_list();
+  buff = new_com->end;
+  while (buff && buff->c != '/')
+    buff = buff->prev;
+  if (buff)
+    buff = buff->next;
+  else
+    return (new_com);
+  while (buff)
+  {
+    char_to_list(to_check, buff->c);
+    buff2 = buff;
+    buff = buff->next;
+    del_char(new_com, buff2);
+  }
+  return (to_check);
+}
+
+void		path_gest(t_dir dir, char *check, char *new, t_list *path)
+{
+  char		*b;
+  DIR		*dir_test;
+
+  if (strncmp(dir.d_name, ".", 1) ||
+    (!strncmp(dir.d_name, ".", 1) && !strncmp(check, ".", 1)))
+  {
+    if (!strncmp(dir.d_name, check, strlen(check)))
+    {
+      if (!strcmp(new, check))
+	b = xmalloc((strlen(dir.d_name) + 2) * sizeof(*b));
+      else
+      {
+	b = xmalloc((strlen(new) + strlen(dir.d_name) + 4) * sizeof(*b));
+	strcpy(b, new);
+      }
+      strcat(b, dir.d_name);
+      if ((dir_test = opendir(b)) != NULL)
+      {
+	strcat(b, "/");
+	xclosedir(dir_test);
+      }
+      insert_end(path, b);
+    }
+  }
+}
+
+t_list		*parse_path(t_termc *command)
+{
+  t_list	*path;
+  t_termc	*new_com;
+  t_termc	*to_check;
+  char		*new;
+  char		*check;
+  DIR		*dir;
+  t_dir		dir_data;
+  t_dir		*dir_res;
+
+  new_com = extract_path(command);
+  to_check = epure_path(new_com);
+  path = xmalloc(sizeof(*path));
+  new = list_to_char(new_com);
+  check = list_to_char(to_check);
+  dir = xopendir(".");
+  if (!access(new, F_OK))
+    dir = opendir(new);
+  if (dir)
+  {
+    while (!xreaddir_r(dir, &dir_data, &dir_res) && dir_res != NULL)
+      path_gest(dir_data, check, new, path);
+    sort_list(path, NULL);
+  }
+  xclosedir(dir);
+  return (path);
+}

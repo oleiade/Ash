@@ -1,0 +1,99 @@
+#include	<stdlib.h>
+#include	<string.h>
+#include	<dirent.h>
+#include	<unistd.h>
+#include	<stdio.h>
+
+#include	"my.h"
+#include	"alias.h"
+#include	"42sh.h"
+
+/*
+** If you want to know what the function do, read the name !
+*/
+
+void		add_alias(char *name, char *value, t_alias **begin)
+{
+  t_alias	*new;
+
+  new = xmalloc(sizeof(*new));
+  new->name = strdup(name);
+  new->value = strdup(value);
+  new->next = *begin;
+  *begin = new;
+  update_alias(2, *begin);
+}
+
+void		del_alias(t_alias **start, t_alias *del)
+{
+  t_alias	*prev;
+  t_alias	*tmp;
+
+  prev = NULL;
+  tmp = *start;
+  while (tmp != NULL)
+    {
+      if (tmp == del)
+	break;
+      prev = tmp;
+      tmp = tmp->next;
+    }
+  if (tmp != *start)
+    {
+      prev->next = tmp->next;
+      free(tmp);
+    }
+  else
+    {
+      tmp = (*start)->next;
+      free(*start);
+      *start = tmp;
+    }
+  update_alias(2, *start);
+}
+
+void		print_alias(t_alias *alias, char *the_alias)
+{
+  t_alias	*dump;
+
+  dump = alias;
+  while (dump != NULL)
+    {
+      if (!strncmp(the_alias, dump->name, strlen(dump->name)))
+	printf("%s='%s'\n", dump->name, dump->value);
+      dump = dump->next;
+    }
+}
+
+void		list_alias(t_alias *alias)
+{
+  t_alias	*dump;
+
+  dump = alias;
+  while (dump != NULL)
+    {
+      printf("%s='%s'\n", dump->name, dump->value);
+      dump = dump->next;
+    }
+}
+
+void		check_alias(char *name, char *value, t_alias *alias)
+{
+  t_alias	*dump;
+  int		flag;
+
+  flag = 0;
+  dump = alias;
+  while (dump != NULL)
+    {
+      if (!strncmp(name, dump->name, strlen(name)))
+	{
+	  del_alias(&alias, dump);
+	  add_alias(name, value, &alias);
+	  flag = 1;
+	}
+      dump = dump->next;
+    }
+  if (flag == 0)
+    add_alias(name, value, &alias);
+}

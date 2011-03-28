@@ -1,0 +1,98 @@
+#include	<stdlib.h>
+#include	<dirent.h>
+#include	<signal.h>
+#include	<sys/wait.h>
+
+#include	"42sh.h"
+#include	"lexer.h"
+
+/*
+** - Fork the process to execute the sub-commands.
+** - Manage the exit value of the fork.
+*/
+
+static void	launch_par(t_fifo_elem *cur, t_sllist **myenv, int *status)
+{
+  cur->data.pid = xfork();
+  if (cur->data.pid > 0)
+    {
+      xwaitpid(cur->data.pid, status, 0);
+      cur->data.return_val = WEXITSTATUS(*status);
+    }
+  else if (cur->down->data.pid == 0)
+    {
+      launch_commands(cur->down, myenv);
+      exit(cur->down->data.return_val);
+    }
+  return ;
+}
+
+/*
+** - Manage the && || ; rules.
+** - Open necessary fd for elem or group of elems (*down).
+** - If *down != NULL, use the parenthesis process (fork && recursive).
+** - Manage the signals before the execution of a binary & at the end.
+** - Closes necessary fds.
+*/
+
+int		launch_commands(t_fifo_elem *cur, t_sllist **myenv)
+{
+  int		status;
+
+  while (cur != NULL)
+    {
+      if (manage_delim(cur) == EXIT_SUCCESS)
+	if (open_fd(cur) == EXIT_SUCCESS)
+	  {
+	    if (cur->down != NULL)
+	      launch_par(cur, myenv, &status);
+	    else if (manage_execution(cur, myenv) == QUIT)
+	      return (QUIT);
+	    disable_sig();
+	    close_fd(cur);
+	  }
+      if (cur != NULL)
+	cur = cur->next;
+    }
+  return (EXIT_SUCCESS);
+}
+
+/*
+** - Checks the lexlist.
+** - Create the parser LL tree.
+** - Execute the tree.
+** - Free fifolist && lexlist.
+*/
+
+int		parser(t_lexlist *list, t_sllist **myenv)
+{
+  t_fifo	fifo;
+  int		ret;
+  t_lexelem	*buf;
+
+  ret = EXIT_FAILURE;
+  fifo.begin = NULL;
+  fifo.end = NULL;
+  fifo.cur = NULL;
+  if (list != NULL)
+    if (list->head != NULL)
+      {
+	alias_lexlist(list);
+	setvar_lexlist(list, *myenv);
+	buf = list->head;
+	if (verif_list(buf) == EXIT_SUCCESS)
+	  {
+	    ret = create_fifo(&fifo, &buf, NEXT);
+	    free_lexlist(list, 0);
+	  }
+	else
+	  free_lexlist(list, 1);
+	if (ret != EXIT_FAILURE)
+	  {
+	    fifo.cur = fifo.begin;
+	    ret = launch_commands(fifo.begin, myenv);
+	  }
+	free_fifo(&fifo);
+      }
+  return (ret);
+}

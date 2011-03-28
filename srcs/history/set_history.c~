@@ -1,0 +1,151 @@
+/*
+** set_history.c for 42sh in /u/all/gsell_f/cu/rendu/c/proj/42sh/trunk
+** 
+** Made by francois-xavier gsell
+** Login   <gsell_f@epitech.net>
+** 
+** Started on  Thu Apr 15 14:49:45 2010 francois-xavier gsell
+** Last update Wed May 19 16:10:13 2010 demay-_l
+*/
+
+#include	<stdio.h>
+#include	<stdlib.h>
+#include	<dirent.h>
+#include	<fcntl.h>
+#include	<unistd.h>
+#include	<string.h>
+
+#include	"42sh.h"
+#include	"my.h"
+#include	"history.h"
+#include	"error_msgs.h"
+#include	"get_next_line.h"
+#include	"lexer.h"
+
+t_list		*init_history()
+{
+  t_list	*history;
+
+  history = xmalloc(sizeof(*history));
+  history->head = NULL;
+  history->tail = NULL;
+  return (history);
+}
+
+/*
+** Function that adds the current
+** stdin in the history doubly linked
+** list.
+*/
+t_list		*add_stdin_to_history(char *str, t_list *history)
+{
+  if (history)
+    insert_end(history, str);
+  return (history);
+}
+
+/*
+** Function that puts the prec elem of
+** doubly linked list History elem
+** in a char *
+** it needs a t_link ptr to the current
+** position in the history in order to work properly.
+** plus, link to reach has to be set with one of the
+** PREV_LINK or NEXT_LINK macros defined in history.h
+*/
+char		*get_history_link(t_link *current_link, int link_to_reach)
+{
+  char		*out_link;
+
+  if (current_link == NULL)
+    {
+      fprintf(stderr, NO_REQ_LINK_AVAILABLE);
+      return (NULL);
+    }
+  else if ((link_to_reach == PREV_LINK && current_link->previous == NULL) ||
+	   (link_to_reach == NEXT_LINK && current_link->next == NULL))
+    return (current_link->data);
+  else
+    {
+      if (link_to_reach == PREV_LINK)
+	{
+	  out_link = current_link->previous->data;
+	  current_link = current_link->previous;
+	  return (out_link);
+	}
+      else
+	{
+	  out_link = current_link->next->data;
+	  current_link = current_link->next;
+	  return (out_link);
+	}
+    }
+}
+
+/*
+** Function that writes the current history
+** to a cache file, in order to restore
+** the history of the shell
+*/
+void		put_hist_to_file(t_list *history, t_sllist **myenv)
+{
+  int		fd;
+  t_link	*tmp;
+  char		*full;
+  char		*home;
+
+  home = my_getenv("HOME", *myenv);
+  if (history && home[0] != 0)
+    {
+      full = concat_filename(HISTORY_FILE, home);
+      tmp = history->head;
+      if (!access(full, W_OK))
+      {
+	fd = xopen(full, O_WRONLY, 0);
+	while (tmp)
+	  {
+	    xwrite(fd, tmp->data, strlen(tmp->data));
+	    xwrite(fd, "\n", 1);
+	    tmp = tmp->next;
+	  }
+	xclose(fd);
+	free(tmp);
+      }
+    }
+    freemylist(history);
+}
+
+/*
+** Function that restores the History
+** doubly linked list from a cache file.
+** filename pointer has to set to
+** the HISTORY_FILE macros in a normal
+** use.
+*/
+t_list		*get_hist_from_file(char *filename, t_sllist **myenv)
+{
+  int		fd;
+  t_list	*history;
+  char		*home_full_line[3];
+
+  history = NULL;
+  if ((home_full_line[0] = my_getenv("HOME", *myenv))[0] != 0)
+    {
+      home_full_line[1] = concat_filename(filename, home_full_line[0]);
+      if (!access(home_full_line[1], R_OK))
+      {
+	fd = xopen(home_full_line[1], O_CREAT | O_RDONLY, 0644);
+	history = init_history();
+	while ((home_full_line[2] = get_next_line(fd)))
+	{
+	  insert_end(history, home_full_line[2]);
+	  free(home_full_line[2]);
+	}
+	xclose(fd);
+      }
+      else if (access(home_full_line[1], F_OK))
+	xopen(home_full_line[1], O_CREAT | O_RDONLY, 0644);
+      free(home_full_line[1]);
+    }
+  return (history);
+}

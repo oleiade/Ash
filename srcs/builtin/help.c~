@@ -1,0 +1,27 @@
+/*
+** help.c for minishell2 in /u/all/gsell_f/cu/rendu/c/minishell2
+** 
+** Made by francois-xavier gsell
+** Login   <gsell_f@epitech.net>
+** 
+** Started on  Tue Feb  9 10:41:54 2010 francois-xavier gsell
+** Last update Sat May 22 14:23:59 2010 hugo cuvillier
+*/
+
+#include	<stdlib.h>
+#include	<stdio.h>
+#include	<dirent.h>
+#include	<unistd.h>
+
+#include	"my.h"
+#include	"42sh.h"
+
+int		built_in_help(char **argv, t_sllist **myenv)
+{
+  myenv = myenv;
+  if (argv[1] == 0)
+    my_putstr(HELP);
+  else
+    fprintf(stderr, ERR_HELP);
+  return (0);
+}

@@ -1,0 +1,82 @@
+#include	<stdio.h>
+#include	<stdlib.h>
+#include	<string.h>
+#include	<unistd.h>
+#include	<dirent.h>
+
+#include	"my.h"
+#include	"42sh.h"
+
+int		to_pwd(char *dir, char *line, t_sllist *myenv)
+{
+  strcpy(dir, my_getenv("PWD", myenv));
+  strcat(dir, "/");
+  strcat(dir, line);
+  return (0);
+}
+
+int		to_home(char *dir, char *line, t_sllist *myenv)
+{
+  strcpy(dir, my_getenv("HOME", myenv));
+  strcat(dir, line + 1);
+  return (0);
+}
+
+char		*mk_dir(char *line, t_sllist *myenv)
+{
+  char		*dir;
+  int		i;
+
+  i = 0;
+  dir = xmalloc(sizeof(char) * 1024);
+  memset(dir, '\0', 1024);
+  if (line[0] == '~' && (line[1] == '/' || line[1] == '\0'))
+    to_home(dir, line, myenv);
+  else if (*line == '/')
+    strcpy(dir, line);
+  else if (line[0] == '-' && line[1] == '\0')
+    strcpy(dir, my_getenv("OLDPWD", myenv));
+  else
+    to_pwd(dir, line, myenv);
+  return (dir);
+}
+
+int		xchdir(char *path, t_sllist **myenv)
+{
+  clear_path(path);
+  if (chdir(path) == -1)
+    {
+      fprintf(stderr, "%s%s", path, ERR_ISNOTFOLD);
+      return (EXIT_FAILURE);
+    }
+  else
+    {
+      my_setenv("OLDPWD", my_getenv("PWD", *myenv), myenv);
+      my_setenv("PWD", path, myenv);
+    }
+  return (EXIT_SUCCESS);
+}
+
+int		built_in_cd(char **argv, t_sllist **myenv)
+{
+  char		*dir;
+
+  if (argv[1] == 0)
+    {
+      if (xchdir(my_getenv("HOME", *myenv), myenv) == EXIT_FAILURE)
+	return (EXIT_FAILURE);
+    }
+  else if (argv[2] == 0)
+    {
+      dir = mk_dir(argv[1], *myenv);
+      if (xchdir(dir, myenv) == EXIT_FAILURE)
+	return (EXIT_FAILURE);
+      free(dir);
+    }
+  else if (argv[2] != 0)
+    {
+      fprintf(stderr, ERR_CDTOO_MANY);
+      return (EXIT_FAILURE);
+    }
+  return (EXIT_SUCCESS);
+}

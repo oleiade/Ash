@@ -1,0 +1,80 @@
+#include	<stdlib.h>
+#include	<unistd.h>
+#include	<dirent.h>
+#include	<sys/types.h>
+#include	<string.h>
+
+#include	"my.h"
+#include	"lexer.h"
+#include	"termc.h"
+#include	"auto.h"
+
+char		*add_quote(t_link *buff)
+{
+  char		*new;
+
+  new = xmalloc((strlen(buff->data) + 3) * sizeof(*new));
+  new[0] = '"';
+  strcpy(new + 1, buff->data);
+  new[strlen(buff->data) + 1] = '"';
+  return (new);
+}
+
+int		is_space(char *str)
+{
+  int		i;
+
+  i = 0;
+  while (str[i])
+  {
+    if (str[i] == ' ')
+      return (1);
+    i++;
+  }
+  return (0);
+}
+
+static	int	is_similar(t_list *list, int i)
+{
+  t_link	*buff;
+
+  buff = list->head;
+  while (buff->next)
+  {
+    if (buff->data[i] != buff->next->data[i])
+      return (0);
+    buff = buff->next;
+  }
+  return (1);
+}
+
+static	int	nb_com(t_termc *com)
+{
+  int		nb;
+  t_com		*buff;
+
+  buff = com->end;
+  nb = 0;
+  while (buff != com->begin && buff->c != '/' && buff->c != ' ')
+  {
+    nb++;
+    buff = buff->prev;
+  }
+  if (buff == com->begin || (buff->c == '/' && buff->prev->c == ' '))
+    nb++;
+  return (nb);
+}
+
+void		check_semi_complet(t_termc *com, t_list *list)
+{
+  int		nb;
+
+  if ((nb = nb_com(com)) != -1)
+  {
+    while (is_similar(list, nb))
+    {
+      char_to_list(com, list->head->data[nb]);
+      nb++;
+    }
+  }
+}
