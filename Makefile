@@ -1,14 +1,3 @@
-##
-## Makefile for 42sh in /u/all/cuvill_h/cu/dev/42sh
-## 
-## Made by hugo cuvillier
-## Login   <cuvill_h@epitech.net>
-## 
-## Started on  Wed May 19 16:48:28 2010 hugo cuvillier
-##
-
-###############################################################################
-
 ## SYSTEM DETECTION
 SYSTEM		= $(shell uname -s)
 SYSTEM		!= uname -s
